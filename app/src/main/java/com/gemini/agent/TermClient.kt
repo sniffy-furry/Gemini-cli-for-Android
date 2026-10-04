@@ -32,7 +32,7 @@ class TermClient(private val ctx: Context) : TerminalViewClient, TerminalSession
     override fun onBell(s: TerminalSession) {}
     override fun onColorsChanged(s: TerminalSession) {}
     override fun onTerminalCursorStateChange(state: Boolean) {}
-    override fun setTerminalShellPid(s: TerminalSession, pid: Int) {}
+    fun setTerminalShellPid(s: TerminalSession, pid: Int) {}
     override fun getTerminalCursorStyle(): Int? = null
 
     // --- TerminalViewClient ---
