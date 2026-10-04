@@ -20,7 +20,8 @@ class Dirs(ctx: Context) {
 }
 
 object SetupManager {
-    fun isReady(ctx: Context) = Dirs(ctx).ready.exists()
+    const val SETUP_VERSION = "2"
+    fun isReady(ctx: Context) = Dirs(ctx).ready.let { it.exists() && it.readText() == SETUP_VERSION }
 
     fun install(ctx: Context, progress: (Int, String) -> Unit) {
         val d = Dirs(ctx)
@@ -69,7 +70,9 @@ object SetupManager {
         copyAsset("proot/proot", d.proot, true)
         copyAsset("proot/loader", d.loader, true)
         File(d.usr, "lib").mkdirs()
-        copyAsset("proot/libtalloc.so.2", File(d.usr, "lib/libtalloc.so.2"), false)
+        (ctx.assets.list("proot/lib") ?: emptyArray()).forEach { n ->
+            copyAsset("proot/lib/$n", File(d.usr, "lib/$n"), false)
+        }
 
         progress(90, "Scriptul de prima rulare...")
         File(d.home, "firstrun.sh").writeText(
@@ -85,7 +88,7 @@ object SetupManager {
             echo "== Gata. Scrie: gemini =="
             """.trimIndent() + "\n"
         )
-        d.ready.writeText("ok")
+        d.ready.writeText(SETUP_VERSION)
         progress(100, "Gata")
     }
 }
