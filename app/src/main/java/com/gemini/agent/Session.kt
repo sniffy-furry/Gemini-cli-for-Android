@@ -11,10 +11,19 @@ object Session {
         val first = !File(d.home, ".gemini_installed").exists()
         val inner = if (first) "sh \$HOME/firstrun.sh; exec bash -l" else "exec bash -l"
 
-        val binds = listOf(
-            "/dev", "/proc", "/sys", "/system", "/apex", "/vendor",
-            "/product", "/odm", "/system_ext", "/linkerconfig"
-        ).filter { File(it).exists() }
+        // punctele de montare trebuie sa existe in rootfs, altfel proot nu le poate lega
+        listOf("dev", "proc", "sys", "tmp").forEach { File(d.rootfs, it).mkdirs() }
+        val dirBinds = listOf("/system", "/apex", "/vendor", "/product", "/odm", "/system_ext")
+            .filter { File(it).exists() }
+        dirBinds.forEach { File(d.rootfs, it).mkdirs() }
+        val fileBinds = listOf("/linkerconfig/ld.config.txt", "/linkerconfig/com.android.art/ld.config.txt")
+            .filter { File(it).exists() }
+        fileBinds.forEach {
+            val mp = File(d.rootfs, it)
+            mp.parentFile?.mkdirs()
+            if (!mp.exists()) mp.createNewFile()
+        }
+        val binds = dirBinds + fileBinds
 
         val args = mutableListOf(
             "proot", "-r", d.rootfs.path,
