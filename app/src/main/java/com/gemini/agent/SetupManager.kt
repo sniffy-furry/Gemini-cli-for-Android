@@ -10,8 +10,10 @@ const val FAKE_HOME = "/data/data/com.termux/files/home"
 
 class Dirs(ctx: Context) {
     val root = File(ctx.filesDir, "termux")
-    val usr = File(root, "usr")
-    val home = File(root, "home")
+    // rootfs propriu: contine fizic /data/data/com.termux/files/{usr,home}
+    val rootfs = File(root, "rootfs")
+    val usr = File(rootfs, "data/data/com.termux/files/usr")
+    val home = File(rootfs, "data/data/com.termux/files/home")
     val tmp = File(root, "tmp")
     val prootDir = File(root, "proot-bin")
     val proot = File(prootDir, "proot")
@@ -20,7 +22,7 @@ class Dirs(ctx: Context) {
 }
 
 object SetupManager {
-    const val SETUP_VERSION = "2"
+    const val SETUP_VERSION = "3"
     fun isReady(ctx: Context) = Dirs(ctx).ready.let { it.exists() && it.readText() == SETUP_VERSION }
 
     fun install(ctx: Context, progress: (Int, String) -> Unit) {
@@ -74,6 +76,7 @@ object SetupManager {
             copyAsset("proot/lib/$n", File(d.usr, "lib/$n"), false)
         }
 
+        File(d.usr, "tmp").mkdirs()
         progress(90, "Scriptul de prima rulare...")
         File(d.home, "firstrun.sh").writeText(
             """
