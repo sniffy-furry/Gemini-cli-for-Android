@@ -6,12 +6,15 @@ import com.termux.terminal.TerminalSessionClient
 import java.io.File
 
 object Session {
+    private fun q(s: String) = "'" + s.replace("'", "'\\''") + "'"
+
     fun create(ctx: Context, apiKey: String, client: TerminalSessionClient): TerminalSession {
         val d = Dirs(ctx)
+        d.tmp.mkdirs()
         val first = !File(d.home, ".gemini_installed").exists()
         val inner = if (first) "sh \$HOME/firstrun.sh; exec bash -l" else "exec bash -l"
 
-        // punctele de montare trebuie sa existe in rootfs, altfel proot nu le poate lega
+        // punctele de montare trebuie sa existe in rootfs
         listOf("dev", "proc", "sys", "tmp").forEach { File(d.rootfs, it).mkdirs() }
         val dirBinds = listOf("/system", "/apex", "/vendor", "/product", "/odm", "/system_ext")
             .filter { File(it).exists() }
@@ -25,18 +28,21 @@ object Session {
         }
         val binds = dirBinds + fileBinds
 
-        val args = mutableListOf(
-            "proot", "-r", d.rootfs.path,
-            "--link2symlink", "--kill-on-exit"
-        )
-        binds.forEach { args += listOf("-b", it) }
-        args += listOf(
+        val cmd = mutableListOf(d.proot.path, "-r", d.rootfs.path, "--link2symlink", "--kill-on-exit")
+        binds.forEach { cmd += listOf("-b", it) }
+        cmd += listOf(
             "-w", FAKE_HOME,
             "$FAKE_USR/bin/env", "-u", "LD_LIBRARY_PATH",
             "$FAKE_USR/bin/bash", "-lc", inner
         )
+
+        // Daca proot se opreste, ramanem intr-un shell Android (depanare) cu variabilele ROOTFS si PROOT
+        val script = "export ROOTFS=${q(d.rootfs.path)} PROOT=${q(d.proot.path)}; " +
+            cmd.joinToString(" ") { q(it) } +
+            "; echo; echo \"[proot a iesit cu codul \$? - shell de depanare, scrie: ls -ld /system]\"; exec /system/bin/sh"
+
         val env = arrayOf(
-            "PATH=$FAKE_USR/bin",
+            "PATH=$FAKE_USR/bin:/system/bin",
             "HOME=$FAKE_HOME",
             "PREFIX=$FAKE_USR",
             "TMPDIR=$FAKE_USR/tmp",
@@ -49,6 +55,6 @@ object Session {
             "PROOT_NO_SECCOMP=1",
             "LD_LIBRARY_PATH=${File(d.usr, "lib").path}"
         )
-        return TerminalSession(d.proot.path, d.home.path, args.toTypedArray(), env, 2000, client)
+        return TerminalSession("/system/bin/sh", d.home.path, arrayOf("sh", "-c", script), env, 2000, client)
     }
 }
