@@ -14,23 +14,11 @@ object Session {
         val first = !File(d.home, ".gemini_installed").exists()
         val inner = if (first) "sh \$HOME/firstrun.sh; exec bash -l" else "exec bash -l"
 
-        // punctele de montare trebuie sa existe in rootfs
-        listOf("dev", "proc", "sys", "tmp").forEach { File(d.rootfs, it).mkdirs() }
-        val dirBinds = listOf("/system", "/apex", "/vendor", "/product", "/odm", "/system_ext")
-            .filter { File(it).exists() }
-        dirBinds.forEach { File(d.rootfs, it).mkdirs() }
-        val fileBinds = listOf("/linkerconfig/ld.config.txt", "/linkerconfig/com.android.art/ld.config.txt")
-            .filter { File(it).exists() }
-        fileBinds.forEach {
-            val mp = File(d.rootfs, it)
-            mp.parentFile?.mkdirs()
-            if (!mp.exists()) mp.createNewFile()
-        }
-        val binds = dirBinds + fileBinds
-
-        val cmd = mutableListOf(d.proot.path, "-r", d.rootfs.path, "--link2symlink", "--kill-on-exit")
-        binds.forEach { cmd += listOf("-b", it) }
-        cmd += listOf(
+        // radacina ramane "/" (sistemul Android vizibil direct); legam doar folderul com.termux din rootfs
+        val termuxHost = File(d.rootfs, "data/data/com.termux").path
+        val cmd = listOf(
+            d.proot.path, "-r", "/", "--link2symlink", "--kill-on-exit",
+            "-b", "$termuxHost:/data/data/com.termux",
             "-w", FAKE_HOME,
             "$FAKE_USR/bin/env", "-u", "LD_LIBRARY_PATH",
             "$FAKE_USR/bin/bash", "-lc", inner
