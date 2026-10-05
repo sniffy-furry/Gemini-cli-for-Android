@@ -1,6 +1,7 @@
 package com.gemini.agent
 
 import android.content.Context
+import android.os.Process
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 import java.io.File
@@ -17,9 +18,9 @@ object Session {
             #!/bin/sh
             echo "== Setez mirror-ul oficial Termux =="
             echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" > ${'$'}PREFIX/etc/apt/sources.list
-            apt update || exit 1
+            apt update || apt update || exit 1
             echo "== Instalez nodejs, python, git =="
-            apt install -y -o Dpkg::Options::=--force-confnew nodejs python git || exit 1
+            apt install -y --fix-missing -o Acquire::Retries=5 -o Acquire::Queue-Mode=access -o Dpkg::Options::=--force-confnew nodejs python git ripgrep || exit 1
             echo "== Instalez Gemini CLI =="
             npm install -g @google/gemini-cli || exit 1
             touch ${'$'}HOME/.gemini_installed
@@ -53,6 +54,13 @@ object Session {
             "TERM=xterm-256color",
             "COLORTERM=truecolor",
             "GEMINI_API_KEY=$apiKey",
+            // identitate Termux: unele module (ex. clipboardy din Gemini CLI) verifica TERMUX_VERSION
+            "TERMUX_VERSION=0.118.0",
+            "TERMUX_APP_PID=${Process.myPid()}",
+            "TERMUX_MAIN_PACKAGE_FORMAT=debian",
+            "TERMUX_APK_RELEASE=F_DROID",
+            "TERMUX_IS_TERMUX=1",
+            "SHELL=$FAKE_USR/bin/bash",
             "PROOT_TMP_DIR=${d.tmp.path}",
             "PROOT_LOADER=${d.loader.path}",
             "PROOT_NO_SECCOMP=1",
