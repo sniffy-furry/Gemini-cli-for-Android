@@ -15,8 +15,11 @@ object Session {
         File(d.home, "firstrun.sh").writeText(
             """
             #!/bin/sh
+            echo "== Setez mirror-ul oficial Termux =="
+            echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" > ${'$'}PREFIX/etc/apt/sources.list
+            apt update || exit 1
             echo "== Instalez nodejs, python, git =="
-            pkg install -y nodejs python git || exit 1
+            apt install -y -o Dpkg::Options::=--force-confnew nodejs python git || exit 1
             echo "== Instalez Gemini CLI =="
             npm install -g @google/gemini-cli || exit 1
             touch ${'$'}HOME/.gemini_installed
