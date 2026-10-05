@@ -77,20 +77,7 @@ object SetupManager {
         }
 
         File(d.usr, "tmp").mkdirs()
-        progress(90, "Scriptul de prima rulare...")
-        File(d.home, "firstrun.sh").writeText(
-            """
-            #!/bin/sh
-            S=${'$'}PREFIX/etc/termux/termux-bootstrap/second-stage/termux-bootstrap-second-stage.sh
-            [ -f "${'$'}S" ] && sh "${'$'}S"
-            echo "== Instalez nodejs, python, git =="
-            pkg install -y nodejs python git || exit 1
-            echo "== Instalez Gemini CLI =="
-            npm install -g @google/gemini-cli || exit 1
-            touch ${'$'}HOME/.gemini_installed
-            echo "== Gata. Scrie: gemini =="
-            """.trimIndent() + "\n"
-        )
+        progress(90, "Finalizez...")
         d.ready.writeText(SETUP_VERSION)
         progress(100, "Gata")
     }

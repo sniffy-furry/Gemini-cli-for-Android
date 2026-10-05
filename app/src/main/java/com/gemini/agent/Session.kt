@@ -11,6 +11,18 @@ object Session {
     fun create(ctx: Context, apiKey: String, client: TerminalSessionClient): TerminalSession {
         val d = Dirs(ctx)
         d.tmp.mkdirs()
+        File(d.rootfs, "data/data/com.termux/cache/apt/archives/partial").mkdirs()
+        File(d.home, "firstrun.sh").writeText(
+            """
+            #!/bin/sh
+            echo "== Instalez nodejs, python, git =="
+            pkg install -y nodejs python git || exit 1
+            echo "== Instalez Gemini CLI =="
+            npm install -g @google/gemini-cli || exit 1
+            touch ${'$'}HOME/.gemini_installed
+            echo "== Gata. Scrie: gemini =="
+            """.trimIndent() + "\n"
+        )
         val first = !File(d.home, ".gemini_installed").exists()
         val inner = if (first) "sh \$HOME/firstrun.sh; exec bash -l" else "exec bash -l"
 
