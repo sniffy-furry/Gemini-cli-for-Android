@@ -19,15 +19,18 @@ object Session {
             echo "== Setez mirror-ul oficial Termux =="
             echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" > ${'$'}PREFIX/etc/apt/sources.list
             apt update || apt update || exit 1
-            echo "== Instalez nodejs, python, git =="
-            apt install -y --fix-missing -o Acquire::Retries=5 -o Acquire::Queue-Mode=access -o Dpkg::Options::=--force-confnew nodejs python git ripgrep || exit 1
-            echo "== Instalez Gemini CLI =="
-            npm install -g @google/gemini-cli || exit 1
-            touch ${'$'}HOME/.gemini_installed
-            echo "== Gata. Scrie: gemini =="
+            echo "== Instalez llama.cpp, python, git, curl, ripgrep =="
+            apt install -y --fix-missing -o Acquire::Retries=5 -o Acquire::Queue-Mode=access -o Dpkg::Options::=--force-confnew python git curl ripgrep llama-cpp || exit 1
+            touch ${'$'}HOME/.agent_ready_v1
+            echo "== Gata. Scrie: agent =="
             """.trimIndent() + "\n"
         )
-        val first = !File(d.home, ".gemini_installed").exists()
+        ctx.assets.open("agent/agent.py").use { i -> File(d.home, "agent.py").outputStream().use { i.copyTo(it) } }
+        File(d.usr, "bin/agent").apply {
+            writeText("#!$FAKE_USR/bin/sh\nexec python \$HOME/agent.py \"\$@\"\n")
+            setExecutable(true, false)
+        }
+        val first = !File(d.home, ".agent_ready_v1").exists()
         val inner = if (first) "sh \$HOME/firstrun.sh; exec bash -l" else "exec bash -l"
 
         // radacina ramane "/" (sistemul Android vizibil direct); legam doar folderul com.termux din rootfs
